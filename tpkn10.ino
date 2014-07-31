@@ -59,11 +59,35 @@ inline void send_column_data(uint8_t data)
 
 void setup()
 {
+    Serial.begin(115200);
     init_spi();
     init_bitbang();
+    Serial.print(F("Booted"));
 }
 
+uint16_t iteration;
 void loop()
 {
+    iteration++;
+    Serial.print(F("Iteration "));
+    Serial.println(iteration, DEC);
+    for (uint8_t cdrv=1; cdrv<=8; cdrv++)
+    {
+        select_column_drv(cdrv);
+        for (uint8_t row=1; row<=8; row++)
+        {
+            select_row(1);
+            for (uint8_t column=1; column<=8; column++)
+            {
+                send_column_data(column);
+                // So eyes keep up
+                delay(200);
+            }
+        }
+    }
+    select_column_drv(0); // This disables all
+
+    // And wait a while until next round
+    delay(1500);
 }
 
