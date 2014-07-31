@@ -10,7 +10,8 @@
 #define LATCH_PORT PORTC
 #define LATCH_DDR DDRC
 #define LATCH_MASK B00011000
-#define LATCH_SHIFT 3
+#define ROW_LATCH B00010000
+#define COLUMN_LATCH B00001000
 
 void init_spi()
 {
@@ -29,6 +30,31 @@ void init_bitbang()
     // And init low
     OE_DECODER_PORT &= (0xff ^ OE_DECODER_MASK);
     LATCH_PORT &= (0xff ^ LATCH_MASK);
+}
+
+inline void select_row(uint8_t row)
+{
+    // Drive low
+    LATCH_PORT &= (0xff ^ ROW_LATCH);
+    SPI.transfer(row);
+    // Drive high (to latch)
+    LATCH_PORT |= ROW_LATCH;
+}
+
+inline void select_column_drv(uint8_t columndrv)
+{
+    // Make sure the value is in valid range
+    columndrv &= OE_DECODER_MASK;
+    OE_DECODER_PORT &= ((0xff ^ OE_DECODER_MASK) | columndrv << OE_DECODER_SHIFT);
+}
+
+inline void send_column_data(uint8_t data)
+{
+    // Drive low
+    LATCH_PORT &= (0xff ^ COLUMN_LATCH);
+    SPI.transfer(data);
+    // Drive high (to latch)
+    LATCH_PORT |= COLUMN_LATCH;
 }
 
 void setup()
