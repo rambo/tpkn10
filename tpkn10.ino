@@ -13,6 +13,14 @@
 #define ROW_LATCH B00010000
 #define COLUMN_LATCH B00001000
 
+
+#define ROWS 7
+#define COLUMNS 40
+#define COLS_PER_DRV 5
+
+// 7 rows by 40 leds
+uint8_t framebuffer[ROWS][COLUMNS/8];
+
 void init_spi()
 {
     // Init HW SPI    
@@ -66,26 +74,53 @@ void setup()
     Serial.print(F("Booted"));
 }
 
-uint16_t iteration;
+unsigned long last_move_time;
+uint8_t coldata;
+uint8_t startbit;
 void loop()
 {
-    iteration++;
+
+    // Do something (but do not waste time)
+
+    // Refresh the framebuffer
+    for (uint8_t row=0; row < ROWS; row++)
+    {
+        select_row(row);
+        for (uint8_t coldrv=0; coldrv < (COLUMNS/COLS_PER_DRV); coldrv++)
+        {
+            select_column_drv(coldrv);
+            if (coldrv == 0)
+            {
+                // Trivial special case
+                coldata = framebuffer[row][coldrv];
+            }
+            else
+            {
+                startbit = coldrv * COLS_PER_DRV;
+                
+                coldata = framebuffer[row][coldrv];
+                
+            }
+            send_column_data(coldata);
+        }
+    }
+    
+    
+    /* Testing    
     for (uint8_t cdrv=0; cdrv<8; cdrv++)
     {
         select_column_drv(cdrv);
         for (uint8_t row=0; row<7; row++)
         {
             select_row(row);
-            send_column_data(0xff);
-            /*
             for (uint8_t column=0; column<5; column++)
             {
                 send_column_data(1 << column);
                 // So eyes keep up
                 delay(25);
             }
-            */
         }
     }
+    */
 }
 
