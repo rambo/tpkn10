@@ -71,7 +71,52 @@ void setup()
     Serial.begin(115200);
     init_spi();
     init_bitbang();
+    
+    // Testpattern
+    for (uint8_t row=0; row < ROWS; row++)
+    {
+        for (uint8_t col=0; col < (COLUMNS/8); col++)
+        {
+            framebuffer[row][col] = 0xff;
+        }
+        for (uint8_t i=0; i < COLUMNS; i++)
+        {
+            if (i % ROWS == row)
+            {
+                framebuffer[row][i/8] ^= 1 << i % 8;
+            }
+        }
+    }
+    
+    dump_framebuffer();
+
     Serial.print(F("Booted"));
+}
+
+void dump_framebuffer()
+{
+    Serial.println(F("Famebuffer:"));
+    Serial.println(F("====="));
+    // Dump the framebuffer
+    for (uint8_t row=0; row < ROWS; row++)
+    {
+        for (uint8_t col=0; col < COLUMNS/8; col++)
+        {
+            for (uint8_t bitpos=0; bitpos < 8; bitpos++)
+            {
+                if (_BV(bitpos) & framebuffer[row][col])
+                {
+                    Serial.print("1");
+                }
+                else
+                {
+                    Serial.print("0");
+                }
+            }
+        }
+        Serial.println();
+    }
+    Serial.println(F("====="));
 }
 
 unsigned long last_move_time;
