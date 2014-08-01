@@ -37,13 +37,17 @@ inline void select_row(uint8_t row)
 {
     // Drive low
     LATCH_PORT &= (0xff ^ ROW_LATCH);
+    /*
     Serial.print(F("select_row port value B"));
     Serial.println(LATCH_PORT, BIN);
+    */
     SPI.transfer(1 << row);
     // Drive high (to latch)
     LATCH_PORT |= ROW_LATCH;
+    /*
     Serial.print(F("select_row port value B"));
     Serial.println(LATCH_PORT, BIN);
+    */
 }
 
 inline void select_column_drv(uint8_t columndrv)
@@ -52,8 +56,6 @@ inline void select_column_drv(uint8_t columndrv)
     Serial.println(columndrv, DEC);
     // Make sure the value is in valid range
     columndrv &= OE_DECODER_MASK;
-    Serial.print(F("select_column_drv after masking "));
-    Serial.println(columndrv, DEC);
     OE_DECODER_PORT &= (0xff ^ OE_DECODER_MASK);
     OE_DECODER_PORT |= (columndrv << OE_DECODER_SHIFT);
     Serial.print(F("select_column_drv port value B"));
@@ -64,13 +66,17 @@ inline void send_column_data(uint8_t data)
 {
     // Drive low
     LATCH_PORT &= (0xff ^ COLUMN_LATCH);
+    /*
     Serial.print(F("send_column_data port value B"));
     Serial.println(LATCH_PORT, BIN);
+    */
     SPI.transfer(data);
     // Drive high (to latch)
     LATCH_PORT |= COLUMN_LATCH;
+    /*
     Serial.print(F("send_column_data port value B"));
     Serial.println(LATCH_PORT, BIN);
+    */
 }
 
 void setup()
@@ -107,7 +113,7 @@ void loop()
             }
         }
     }
-    select_column_drv(0); // This disables all
+    //select_column_drv(0); // This disables all
 
     // And wait a while until next round
     delay(1500);
