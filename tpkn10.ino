@@ -27,9 +27,10 @@ void init_spi()
     SPI.begin();
     SPI.setDataMode(SPI_MODE0);
     SPI.setBitOrder(MSBFIRST);
-    SPI.setClockDivider(SPI_CLOCK_DIV2); 
+    //SPI.setClockDivider(SPI_CLOCK_DIV2); 
     //SPI.setClockDivider(SPI_CLOCK_DIV16); // 1Mhz should still work with messy cables
     //SPI.setClockDivider(SPI_CLOCK_DIV32); // 500kHz should still work with messy cables
+    SPI.setClockDivider(SPI_CLOCK_DIV64); // 500kHz should still work with messy cables
 }
 
 void init_bitbang()
@@ -149,7 +150,7 @@ void loop()
                 case 6:
                 {
                     coldata =  (framebuffer[row][0] & B11100000) >> 5;
-                    coldata &= (framebuffer[row][1] & B00000011) >> 6;
+                    coldata &= (framebuffer[row][1] & B00000011) << 3;
                     break;
                 }
                 case 5:
@@ -190,8 +191,8 @@ void loop()
             send_column_data(coldata);
         }
     }
-    
-    
+
+
     /* Testing    
     for (uint8_t cdrv=0; cdrv<8; cdrv++)
     {
@@ -205,6 +206,21 @@ void loop()
                 // So eyes keep up
                 delay(25);
             }
+        }
+    }
+    */
+
+
+    /* Testing 2 
+    for (uint8_t cdrv=0; cdrv<8; cdrv++)
+    {
+        select_column_drv(cdrv);
+        for (uint8_t row=0; row<7; row++)
+        {
+            select_row(row);
+            send_column_data(B00011111);
+            // So eyes keep up
+            delay(25);
         }
     }
     */
