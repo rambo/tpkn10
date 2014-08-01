@@ -86,6 +86,11 @@ void setup()
                 framebuffer[row][i/8] ^= 1 << i % 8;
             }
         }
+        // Invert the pattern
+        for (uint8_t col=0; col < (COLUMNS/8); col++)
+        {
+            framebuffer[row][col] ^= 0xff;
+        }
     }
     
     dump_framebuffer();
