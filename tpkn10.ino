@@ -19,7 +19,8 @@ void init_spi()
     SPI.begin();
     SPI.setDataMode(SPI_MODE0);
     SPI.setBitOrder(MSBFIRST);
-    SPI.setClockDivider(SPI_CLOCK_DIV16); // 1Mhz should still work with messy cables
+//    SPI.setClockDivider(SPI_CLOCK_DIV16); // 1Mhz should still work with messy cables
+    SPI.setClockDivider(SPI_CLOCK_DIV32); // 500kHz should still work with messy cables
 }
 
 void init_bitbang()
@@ -36,25 +37,40 @@ inline void select_row(uint8_t row)
 {
     // Drive low
     LATCH_PORT &= (0xff ^ ROW_LATCH);
-    SPI.transfer(row);
+    Serial.print(F("select_row port value B"));
+    Serial.println(LATCH_PORT, BIN);
+    SPI.transfer(1 << row);
     // Drive high (to latch)
     LATCH_PORT |= ROW_LATCH;
+    Serial.print(F("select_row port value B"));
+    Serial.println(LATCH_PORT, BIN);
 }
 
 inline void select_column_drv(uint8_t columndrv)
 {
+    Serial.print(F("select_column_drv called with "));
+    Serial.println(columndrv, DEC);
     // Make sure the value is in valid range
     columndrv &= OE_DECODER_MASK;
-    OE_DECODER_PORT &= ((0xff ^ OE_DECODER_MASK) | columndrv << OE_DECODER_SHIFT);
+    Serial.print(F("select_column_drv after masking "));
+    Serial.println(columndrv, DEC);
+    OE_DECODER_PORT &= (0xff ^ OE_DECODER_MASK);
+    OE_DECODER_PORT |= (columndrv << OE_DECODER_SHIFT);
+    Serial.print(F("select_column_drv port value B"));
+    Serial.println(OE_DECODER_PORT, BIN);
 }
 
 inline void send_column_data(uint8_t data)
 {
     // Drive low
     LATCH_PORT &= (0xff ^ COLUMN_LATCH);
+    Serial.print(F("send_column_data port value B"));
+    Serial.println(LATCH_PORT, BIN);
     SPI.transfer(data);
     // Drive high (to latch)
     LATCH_PORT |= COLUMN_LATCH;
+    Serial.print(F("send_column_data port value B"));
+    Serial.println(LATCH_PORT, BIN);
 }
 
 void setup()
@@ -74,12 +90,18 @@ void loop()
     for (uint8_t cdrv=1; cdrv<=8; cdrv++)
     {
         select_column_drv(cdrv);
-        for (uint8_t row=1; row<=8; row++)
+        for (uint8_t row=0; row<8; row++)
         {
-            select_row(1);
-            for (uint8_t column=1; column<=8; column++)
+            select_row(row);
+            for (uint8_t column=0; column<8; column++)
             {
-                send_column_data(column);
+                Serial.print(F("cdrv="));
+                Serial.println(cdrv, DEC);
+                Serial.print(F("row="));
+                Serial.println(row, DEC);
+                Serial.print(F("column="));
+                Serial.println(column, DEC);
+                send_column_data(1 << column);
                 // So eyes keep up
                 delay(200);
             }
