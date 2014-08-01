@@ -89,17 +89,53 @@ void loop()
         for (uint8_t coldrv=0; coldrv < (COLUMNS/COLS_PER_DRV); coldrv++)
         {
             select_column_drv(coldrv);
-            if (coldrv == 0)
+            switch(coldrv)
             {
-                // Trivial special case
-                coldata = framebuffer[row][coldrv];
-            }
-            else
-            {
-                startbit = coldrv * COLS_PER_DRV;
-                
-                coldata = framebuffer[row][coldrv];
-                
+                case 7:
+                {
+                    coldata =  (framebuffer[row][0] & B00011111);
+                    break;
+                }
+                case 6:
+                {
+                    coldata =  (framebuffer[row][0] & B11100000) >> 3;
+                    coldata &= (framebuffer[row][1] & B11000000) >> 6;
+                    break;
+                }
+                case 5:
+                {
+                  
+                    coldata =  (framebuffer[row][1] & B00111110) >> 1;
+                    break;
+                }
+                case 4:
+                {
+                    coldata =  (framebuffer[row][1] & B00000001);
+                    coldata &= (framebuffer[row][2] & B11110000) >> 3;
+                    break;
+                }
+                case 3:
+                {
+                    coldata =  (framebuffer[row][2] & B00001111);
+                    coldata &= (framebuffer[row][3] & B10000000) >> 6;
+                    break;
+                }
+                case 2:
+                {
+                    coldata =  (framebuffer[row][3] & B01111100) >> 2;
+                    break;
+                }
+                case 1:
+                {
+                    coldata =  (framebuffer[row][3] & B00000011);
+                    coldata &= (framebuffer[row][4] & B11100000) >> 5;
+                    break;
+                }
+                case 0:
+                {
+                    coldata =  (framebuffer[row][4] & B11111000) >> 3;
+                    break;
+                }
             }
             send_column_data(coldata);
         }
