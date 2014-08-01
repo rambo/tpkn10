@@ -96,10 +96,10 @@ void loop()
     for (uint8_t cdrv=1; cdrv<=8; cdrv++)
     {
         select_column_drv(cdrv);
-        for (uint8_t row=0; row<8; row++)
+        for (uint8_t row=0; row<7; row++)
         {
             select_row(row);
-            for (uint8_t column=0; column<8; column++)
+            for (uint8_t column=0; column<5; column++)
             {
                 Serial.print(F("cdrv="));
                 Serial.println(cdrv, DEC);
