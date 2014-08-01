@@ -93,7 +93,7 @@ void loop()
     iteration++;
     Serial.print(F("Iteration "));
     Serial.println(iteration, DEC);
-    for (uint8_t cdrv=1; cdrv<=8; cdrv++)
+    for (uint8_t cdrv=0; cdrv<8; cdrv++)
     {
         select_column_drv(cdrv);
         for (uint8_t row=0; row<7; row++)
