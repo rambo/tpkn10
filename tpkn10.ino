@@ -19,8 +19,8 @@ void init_spi()
     SPI.begin();
     SPI.setDataMode(SPI_MODE0);
     SPI.setBitOrder(MSBFIRST);
-//    SPI.setClockDivider(SPI_CLOCK_DIV16); // 1Mhz should still work with messy cables
-    SPI.setClockDivider(SPI_CLOCK_DIV32); // 500kHz should still work with messy cables
+    SPI.setClockDivider(SPI_CLOCK_DIV16); // 1Mhz should still work with messy cables
+    //SPI.setClockDivider(SPI_CLOCK_DIV32); // 500kHz should still work with messy cables
 }
 
 void init_bitbang()
@@ -52,14 +52,18 @@ inline void select_row(uint8_t row)
 
 inline void select_column_drv(uint8_t columndrv)
 {
+    /*
     Serial.print(F("select_column_drv called with "));
     Serial.println(columndrv, DEC);
+    */
     // Make sure the value is in valid range
     columndrv &= OE_DECODER_MASK;
     OE_DECODER_PORT &= (0xff ^ OE_DECODER_MASK);
     OE_DECODER_PORT |= (columndrv << OE_DECODER_SHIFT);
+    /*
     Serial.print(F("select_column_drv port value B"));
     Serial.println(OE_DECODER_PORT, BIN);
+    */
 }
 
 inline void send_column_data(uint8_t data)
@@ -91,8 +95,10 @@ uint16_t iteration;
 void loop()
 {
     iteration++;
+    /*
     Serial.print(F("Iteration "));
     Serial.println(iteration, DEC);
+    */
     for (uint8_t cdrv=0; cdrv<8; cdrv++)
     {
         select_column_drv(cdrv);
@@ -101,21 +107,20 @@ void loop()
             select_row(row);
             for (uint8_t column=0; column<5; column++)
             {
+                /*
                 Serial.print(F("cdrv="));
                 Serial.println(cdrv, DEC);
                 Serial.print(F("row="));
                 Serial.println(row, DEC);
                 Serial.print(F("column="));
                 Serial.println(column, DEC);
+                */
                 send_column_data(1 << column);
                 // So eyes keep up
-                delay(200);
+                //delay(10);
             }
         }
     }
     //select_column_drv(0); // This disables all
-
-    // And wait a while until next round
-    delay(1500);
 }
 
