@@ -2,6 +2,8 @@
 
 Remove the PLCC chip, solder wires to socket pins 13, 14 & 15 at least.
 
+I'm having the weirdest ground issues, connecting to (even floating) laptop causes us to lose half of led output. Turning the board gives semi-random results etc...
+
 ## Notes about the board itself
 
 44 pin PLCC socket, note the funky pin order (http://i207.photobucket.com/albums/bb73/ultimateroadwarrior/44pinplcc.jpg)
