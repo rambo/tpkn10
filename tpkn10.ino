@@ -24,6 +24,21 @@ typedef uint8_t Framebuffer[ROWS][COLUMNS/8];
 Framebuffer framebuffer_one;
 Framebuffer framebuffer_two;
 Framebuffer *active_framebuffer = &framebuffer_one;
+Framebuffer *write_framebuffer = &framebuffer_two;
+
+void blit(void)
+{
+    if (active_framebuffer == &framebuffer_one)
+    {
+        active_framebuffer = &framebuffer_two;
+        write_framebuffer = &framebuffer_one;
+    }
+    else
+    {
+        active_framebuffer = &framebuffer_one;
+        write_framebuffer = &framebuffer_two;
+    }
+}
 
 
 volatile boolean change_row = false;
@@ -83,17 +98,18 @@ void setup()
     {
         for (uint8_t col=0; col < (COLUMNS/8); col++)
         {
-            (*active_framebuffer)[row][col] = 0xff;
+            (*write_framebuffer)[row][col] = 0xff;
         }
         for (uint8_t i=0; i < COLUMNS; i++)
         {
             if (i % ROWS == row)
             {
-                (*active_framebuffer)[row][i/8] ^= 1 << i % 8;
+                (*write_framebuffer)[row][i/8] ^= 1 << i % 8;
             }
         }
     }
     Serial.println(F("Pattern done"));
+    blit();
     // To serialport, for debugging
     dump_active_framebuffer();
 
@@ -277,6 +293,8 @@ void loop()
 {
 
     // Do something with the frambuffer (TODO: Double-buffer it)
+    delay(1000);
+    blit();
 
 }
 
