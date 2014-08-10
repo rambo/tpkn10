@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <SPI.h>
 
 /**
@@ -55,7 +56,60 @@ void blit_on_blank(void)
     }
 }
 
-
+// This convers the simple framebuffer_one we have to correct data format for the column drivers (which are funky)
+inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
+{
+    uint8_t coldata;
+    switch(coldrv)
+    {
+        case 7:
+        {
+            coldata =  ((*active_framebuffer)[row][0] & B00011111);
+            break;
+        }
+        case 6:
+        {
+            coldata =  ((*active_framebuffer)[row][0] & B11100000) >> 5;
+            coldata |= ((*active_framebuffer)[row][1] & B00000011) << 3;
+            break;
+        }
+        case 5:
+        {
+          
+            coldata =  ((*active_framebuffer)[row][1] & B01111100) >> 2; 
+            break;
+        }
+        case 4:
+        {
+            coldata =  ((*active_framebuffer)[row][1] & B10000000) >> 7;
+            coldata |= ((*active_framebuffer)[row][2] & B00001111) << 1;
+            break;
+        }
+        case 3:
+        {
+            coldata =  ((*active_framebuffer)[row][2] & B11110000) >> 4;
+            coldata |= ((*active_framebuffer)[row][3] & B00000001) << 4;
+            break;
+        }
+        case 2:
+        {
+            coldata =  ((*active_framebuffer)[row][3] & B00111110) >> 1;
+            break;
+        }
+        case 1:
+        {
+            coldata =  ((*active_framebuffer)[row][3] & B11000000) >> 6;
+            coldata |= ((*active_framebuffer)[row][4] & B00000111) << 2;
+            break;
+        }
+        case 0:
+        {
+            coldata =  ((*active_framebuffer)[row][4] & B11111000) >> 3;
+            break;
+        }
+    }
+    return coldata;
+}
 
 volatile boolean change_row = false;
 volatile int8_t current_row = -1;
@@ -100,44 +154,34 @@ inline void enable_screen(void)
     LATCH_PORT |= BLANK_SCREEN;
 }
 
-void setup()
+// This determines the refesh frequency, we must keep each column driver on for some amount of time so the LEDs have time to turn on.
+void initTimerCounter2(void)
+{
+    // Setup for 50uSec delay (or so)
+    cli();
+    TCCR2A = 0;                  //stop the timer
+    TCNT2 = 0;                  //zero the timer
+    OCR2A = 100;      //set the compare value
+    TIMSK2 = _BV(OCIE2A);         //interrupt on Compare Match A
+    //start timer, ctc mode, prescaler clk/8
+    TCCR2A = _BV(WGM01);
+    TCCR2B = _BV(CS20) | _BV(CS21);
+    sei();
+}
+
+void tpn10_begin()
 {
     Serial.begin(115200);
     Serial.println(F("Booting"));
     pinMode(10, OUTPUT); // aka PB2
     init_spi();
     init_bitbang();
-    
-    // Testpattern
-    Serial.println(F("Creating testpattern"));
-    for (uint8_t row=0; row < ROWS; row++)
-    {
-        for (uint8_t col=0; col < (COLUMNS/8); col++)
-        {
-            (*write_framebuffer)[row][col] = 0xff;
-        }
-        for (uint8_t i=0; i < COLUMNS; i++)
-        {
-            if (i % ROWS == row)
-            {
-                (*write_framebuffer)[row][i/8] ^= 1 << i % 8;
-            }
-        }
-    }
-    Serial.println(F("Pattern done"));
-    blit();
-    // To serialport, for debugging
-    dump_active_framebuffer();
-
     // Get ready
     blank_screen();
     // We must start with a row change
     change_row = true;
     // Used for refreshing the screen
-    Serial.println(F("Init timer"));
     initTimerCounter2();
-
-    Serial.println(F("Booted"));
 }
 
 // To serialport, for debugging
@@ -167,20 +211,6 @@ void dump_active_framebuffer()
     Serial.println(F("====="));
 }
 
-// This determines the refesh frequency, we must keep each column driver on for some amount of time so the LEDs have time to turn on.
-void initTimerCounter2(void)
-{
-    // Setup for 50uSec delay (or so)
-    cli();
-    TCCR2A = 0;                  //stop the timer
-    TCNT2 = 0;                  //zero the timer
-    OCR2A = 100;      //set the compare value
-    TIMSK2 = _BV(OCIE2A);         //interrupt on Compare Match A
-    //start timer, ctc mode, prescaler clk/8
-    TCCR2A = _BV(WGM01);
-    TCCR2B = _BV(CS20) | _BV(CS21);
-    sei();
-}
 
 // This handles the refreshing
 ISR(TIMER2_COMPA_vect)
@@ -254,69 +284,5 @@ ISR(SPI_STC_vect)
     LATCH_PORT |= COLUMN_LATCH;
     // All data is sent, re-enable the screen.
     enable_screen();
-}
-
-// This convers the simple framebuffer_one we have to correct data format for the column drivers (which are funky)
-inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
-{
-    uint8_t coldata;
-    switch(coldrv)
-    {
-        case 7:
-        {
-            coldata =  ((*active_framebuffer)[row][0] & B00011111);
-            break;
-        }
-        case 6:
-        {
-            coldata =  ((*active_framebuffer)[row][0] & B11100000) >> 5;
-            coldata |= ((*active_framebuffer)[row][1] & B00000011) << 3;
-            break;
-        }
-        case 5:
-        {
-          
-            coldata =  ((*active_framebuffer)[row][1] & B01111100) >> 2; 
-            break;
-        }
-        case 4:
-        {
-            coldata =  ((*active_framebuffer)[row][1] & B10000000) >> 7;
-            coldata |= ((*active_framebuffer)[row][2] & B00001111) << 1;
-            break;
-        }
-        case 3:
-        {
-            coldata =  ((*active_framebuffer)[row][2] & B11110000) >> 4;
-            coldata |= ((*active_framebuffer)[row][3] & B00000001) << 4;
-            break;
-        }
-        case 2:
-        {
-            coldata =  ((*active_framebuffer)[row][3] & B00111110) >> 1;
-            break;
-        }
-        case 1:
-        {
-            coldata =  ((*active_framebuffer)[row][3] & B11000000) >> 6;
-            coldata |= ((*active_framebuffer)[row][4] & B00000111) << 2;
-            break;
-        }
-        case 0:
-        {
-            coldata =  ((*active_framebuffer)[row][4] & B11111000) >> 3;
-            break;
-        }
-    }
-    return coldata;
-}
-
-void loop()
-{
-
-    // Do something with the write_framebuffer, assignment is; (*write_framebuffer)[row][col] = value then call blit_on_blank();
-    delay(1000);
-    blit_on_blank();
-
 }
 
