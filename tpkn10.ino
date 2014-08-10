@@ -189,12 +189,10 @@ void initTimerCounter2(void)
 ISR(TIMER2_COMPA_vect)
 {
     PORTB |= _BV(2); // Turn pin 10 on
-    TCNT2 = 0;                  //zero the timer
     // Blank for redraw
     blank_screen();
     // Enable SPI interrupts
     SPCR |= _BV(SPIE);
-
 
     // Handle row-change
     if (change_row)
@@ -204,6 +202,8 @@ ISR(TIMER2_COMPA_vect)
         {
             // This probably causes extra wait at end of rows
             current_row = -1;
+            // Aaand recurse
+            TIMER2_COMPA_vect();
             return;
         }
         // Drive low to "chip-select"
@@ -214,7 +214,7 @@ ISR(TIMER2_COMPA_vect)
 
     // Scan columns (0-7)
     current_column_drv++;
-    if (current_column_drv > coldrvs)
+    if (current_column_drv >= coldrvs)
     {
         current_column_drv = -1;
         change_row = true;
@@ -229,6 +229,7 @@ ISR(TIMER2_COMPA_vect)
 
     SPDR = get_column_drv_data(current_column_drv, current_row);
 
+    TCNT2 = 0; //zero the timer
 }
 
 // Called when transfer is done
@@ -305,62 +306,10 @@ inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
     return coldata;
 }
 
-
-
-unsigned long last_move_time;
-uint8_t coldata;
-uint8_t startbit;
 void loop()
 {
 
-    // Do something (but do not waste time)
-    /* Refresh the framebuffer, MOVED to interrupts
-    for (uint8_t row=0; row < ROWS; row++)
-    {
-        blank_screen();
-        select_row(row);
-        for (uint8_t coldrv=0; coldrv < (COLUMNS/COLS_PER_DRV); coldrv++)
-        {
-            blank_screen();
-            select_column_drv(coldrv);
-            send_column_data(get_column_drv_data(coldrv, row));
-            enable_screen();
-            delayMicroseconds(200);
-        }
-    }
-     */
+    // Do something with the frambuffer (TODO: Double-buffer it)
 
-
-     /* Testing 
-    for (uint8_t cdrv=0; cdrv<8; cdrv++)
-    {
-        select_column_drv(cdrv);
-        for (uint8_t row=0; row<7; row++)
-        {
-            select_row(row);
-            for (uint8_t column=0; column<5; column++)
-            {
-                send_column_data(1 << column);
-                // So eyes keep up
-                delay(25);
-            }
-        }
-    }
-    */
-
-
-    /* Testing 2
-    for (uint8_t cdrv=0; cdrv<8; cdrv++)
-    {
-        select_column_drv(cdrv);
-        for (uint8_t row=0; row<7; row++)
-        {
-            select_row(row);
-            send_column_data(B00011111);
-            // So eyes keep up
-            //delay(25);
-        }
-    }
-    */
 }
 
