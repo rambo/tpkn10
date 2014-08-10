@@ -1,8 +1,7 @@
 # Arduino driver for TP-KN10 board
 
-Remove the PLCC chip, solder wires to socket pins 13, 14 & 15 at least.
-
-I'm having the weirdest ground issues, connecting to (even floating) laptop causes us to lose half of led output. Turning the board gives semi-random results etc...
+Remove the PLCC chip, solder wires to socket pins 13, 14, 15 & 16. Alternatively
+solder the corresponding wires directly to the legs of the 74HC138. If you're going to use the "display bus" connector to connect the other side of a display then you need to solder wires to the legs of the connector (or to the PLCC socket)
 
 ## Notes about the board itself
 
@@ -30,7 +29,6 @@ Has onboard 1A 5V switching reg, accpets 7-40V input (24V nominal)
 
 16 E3 for the 74HC138 (used for global display blanking) -> A5
 
-These are not on the display-bus, the output-enables are, but we'll ignore those for now.
+These are not on the display-bus, the outputs of the 74HC138 are, but we'll use the decoder to save a bunch of (5) pins.
 
-Pro tip: The 74HC138 lines that we need from the PLCC are probably easier to solder directly to the IC legs, I wonder why I didn't think of this at ASM14..
 
