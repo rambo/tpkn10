@@ -22,13 +22,15 @@ Has onboard 1A 5V switching reg, accpets 7-40V input (24V nominal)
 
 35 clock for all of the 595s (both row and column) (also pin 15 on "display bus") -> D13
 
-13 A for the 74138 (drives output-enables for the column drivers) -> A0
+13 A for the 74HC138 (drives output-enables for the column drivers) -> A0
 
-14 B for the 74138 (drives output-enables for the column drivers) -> A1
+14 B for the 74HC138 (drives output-enables for the column drivers) -> A1
 
-15 C for the 74138 (drives output-enables for the column drivers) -> A2
+15 C for the 74HC138 (drives output-enables for the column drivers) -> A2
 
-16 E3 for the 74138 (used for global display blanking) -> A5
+16 E3 for the 74HC138 (used for global display blanking) -> A5
 
 These are not on the display-bus, the output-enables are, but we'll ignore those for now.
+
+Pro tip: The 74HC138 lines that we need from the PLCC are probably easier to solder directly to the IC legs, I wonder why I didn't think of this at ASM14..
 
