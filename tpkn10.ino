@@ -19,7 +19,11 @@
 #define COLS_PER_DRV 5
 
 // 7 rows by 40 leds
-uint8_t framebuffer[ROWS][COLUMNS/8];
+typedef uint8_t Framebuffer[ROWS][COLUMNS/8];
+
+Framebuffer framebuffer_one;
+Framebuffer framebuffer_two;
+Framebuffer (*active_framebuffer) = &framebuffer_one;
 
 
 volatile boolean change_row = false;
@@ -68,51 +72,55 @@ inline void enable_screen(void)
 void setup()
 {
     Serial.begin(115200);
+    Serial.println(F("Booting"));
     pinMode(10, OUTPUT); // aka PB2
     init_spi();
     init_bitbang();
     
     // Testpattern
+    Serial.println(F("Creating testpattern"));
     for (uint8_t row=0; row < ROWS; row++)
     {
         for (uint8_t col=0; col < (COLUMNS/8); col++)
         {
-            framebuffer[row][col] = 0xff;
+            (*active_framebuffer)[row][col] = 0xff;
         }
         for (uint8_t i=0; i < COLUMNS; i++)
         {
             if (i % ROWS == row)
             {
-                framebuffer[row][i/8] ^= 1 << i % 8;
+                (*active_framebuffer)[row][i/8] ^= 1 << i % 8;
             }
         }
     }
+    Serial.println(F("Pattern done"));
     // To serialport, for debugging
-    dump_framebuffer();
+    dump_active_framebuffer();
 
     // Get ready
     blank_screen();
     // We must start with a row change
     change_row = true;
     // Used for refreshing the screen
+    Serial.println(F("Init timer"));
     initTimerCounter2();
 
-    Serial.print(F("Booted"));
+    Serial.println(F("Booted"));
 }
 
 // To serialport, for debugging
-void dump_framebuffer()
+void dump_active_framebuffer()
 {
     Serial.println(F("Famebuffer:"));
     Serial.println(F("====="));
-    // Dump the framebuffer
+    // Dump the framebuffer_one
     for (uint8_t row=0; row < ROWS; row++)
     {
         for (uint8_t col=0; col < COLUMNS/8; col++)
         {
             for (uint8_t bitpos=0; bitpos < 8; bitpos++)
             {
-                if (_BV(bitpos) & framebuffer[row][col])
+                if (_BV(bitpos) & (*active_framebuffer)[row][col])
                 {
                     Serial.print("1");
                 }
@@ -210,7 +218,7 @@ ISR(SPI_STC_vect)
     enable_screen();
 }
 
-// This convers the simple framebuffer we have to correct data format for the column drivers (which are funky)
+// This convers the simple framebuffer_one we have to correct data format for the column drivers (which are funky)
 inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
 {
     uint8_t coldata;
@@ -218,47 +226,47 @@ inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
     {
         case 7:
         {
-            coldata =  (framebuffer[row][0] & B00011111);
+            coldata =  ((*active_framebuffer)[row][0] & B00011111);
             break;
         }
         case 6:
         {
-            coldata =  (framebuffer[row][0] & B11100000) >> 5;
-            coldata |= (framebuffer[row][1] & B00000011) << 3;
+            coldata =  ((*active_framebuffer)[row][0] & B11100000) >> 5;
+            coldata |= ((*active_framebuffer)[row][1] & B00000011) << 3;
             break;
         }
         case 5:
         {
           
-            coldata =  (framebuffer[row][1] & B01111100) >> 2; 
+            coldata =  ((*active_framebuffer)[row][1] & B01111100) >> 2; 
             break;
         }
         case 4:
         {
-            coldata =  (framebuffer[row][1] & B10000000) >> 7;
-            coldata |= (framebuffer[row][2] & B00001111) << 1;
+            coldata =  ((*active_framebuffer)[row][1] & B10000000) >> 7;
+            coldata |= ((*active_framebuffer)[row][2] & B00001111) << 1;
             break;
         }
         case 3:
         {
-            coldata =  (framebuffer[row][2] & B11110000) >> 4;
-            coldata |= (framebuffer[row][3] & B00000001) << 4;
+            coldata =  ((*active_framebuffer)[row][2] & B11110000) >> 4;
+            coldata |= ((*active_framebuffer)[row][3] & B00000001) << 4;
             break;
         }
         case 2:
         {
-            coldata =  (framebuffer[row][3] & B00111110) >> 1;
+            coldata =  ((*active_framebuffer)[row][3] & B00111110) >> 1;
             break;
         }
         case 1:
         {
-            coldata =  (framebuffer[row][3] & B11000000) >> 6;
-            coldata |= (framebuffer[row][4] & B00000111) << 2;
+            coldata =  ((*active_framebuffer)[row][3] & B11000000) >> 6;
+            coldata |= ((*active_framebuffer)[row][4] & B00000111) << 2;
             break;
         }
         case 0:
         {
-            coldata =  (framebuffer[row][4] & B11111000) >> 3;
+            coldata =  ((*active_framebuffer)[row][4] & B11111000) >> 3;
             break;
         }
     }
