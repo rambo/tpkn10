@@ -23,7 +23,7 @@ typedef uint8_t Framebuffer[ROWS][COLUMNS/8];
 
 Framebuffer framebuffer_one;
 Framebuffer framebuffer_two;
-Framebuffer (*active_framebuffer) = &framebuffer_one;
+Framebuffer *active_framebuffer = &framebuffer_one;
 
 
 volatile boolean change_row = false;
