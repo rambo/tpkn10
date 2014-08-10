@@ -182,7 +182,7 @@ void tpn10_begin()
 }
 
 // To serialport, for debugging
-void dump_active_framebuffer()
+void dump_framebuffer(Framebuffer *given_framebuffer)
 {
     Serial.println(F("Famebuffer:"));
     Serial.println(F("====="));
@@ -193,7 +193,7 @@ void dump_active_framebuffer()
         {
             for (uint8_t bitpos=0; bitpos < 8; bitpos++)
             {
-                if (_BV(bitpos) & (*active_framebuffer)[row][col])
+                if (_BV(bitpos) & (*given_framebuffer)[row][col])
                 {
                     Serial.print("1");
                 }
@@ -207,6 +207,17 @@ void dump_active_framebuffer()
     }
     Serial.println(F("====="));
 }
+void dump_active_framebuffer()
+{
+    Serial.print(F("Active "));
+    dump_framebuffer(active_framebuffer);
+}
+void dump_write_framebuffer()
+{
+    Serial.print(F("Write "));
+    dump_framebuffer(write_framebuffer);
+}
+
 
 
 // This handles the refreshing
