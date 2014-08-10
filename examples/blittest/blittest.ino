@@ -36,6 +36,14 @@ void loop()
 
     // Do something with the write_framebuffer, assignment is; (*write_framebuffer)[row][col] = value then call blit_on_blank();
     delay(1000);
+    // invert the pattern
+    for (uint8_t row=0; row < ROWS; row++)
+    {
+        for (uint8_t col=0; col < (COLUMNS/8); col++)
+        {
+            (*write_framebuffer)[row][col] ^= 0xff;
+        }
+    }
     blit_on_blank();
 
 }
