@@ -6,7 +6,6 @@ void setup()
     Serial.begin(115200);
     Serial.println(F("Booting"));
     tpn10_begin();
-    pinMode(10, OUTPUT); // aka PB2
 
     // Testpattern
     Serial.println(F("Creating testpattern"));

@@ -171,9 +171,6 @@ void initTimerCounter2(void)
 
 void tpn10_begin()
 {
-    Serial.begin(115200);
-    Serial.println(F("Booting"));
-    pinMode(10, OUTPUT); // aka PB2
     init_spi();
     init_bitbang();
     // Get ready
@@ -215,7 +212,6 @@ void dump_active_framebuffer()
 // This handles the refreshing
 ISR(TIMER2_COMPA_vect)
 {
-    PORTB |= _BV(2); // Turn pin 10 on (for debugging)
     // Blank for redraw
     blank_screen();
     // Enable SPI interrupts
@@ -270,7 +266,6 @@ ISR(SPI_STC_vect)
 {
     // Disable the interrupt
     SPCR &= ~_BV(SPIE);
-    PORTB &= ~_BV(2); // Turn pin 10 off  (for debugging)
     if (change_row)
     {
         // Drive high (to latch)
