@@ -205,7 +205,7 @@ void loop()
                 }
             }
             send_column_data(coldata);
-            delayMicroseconds(500);
+            delayMicroseconds(200);
         }
     }
 
