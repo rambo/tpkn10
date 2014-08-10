@@ -177,14 +177,14 @@ void loop()
                 }
                 case 4:
                 {
-                    coldata =  (framebuffer[row][1] & B00000001);
-                    coldata |= (framebuffer[row][2] & B11110000) >> 3;
+                    coldata =  (framebuffer[row][1] & B10000000) >> 7;
+                    coldata |= (framebuffer[row][2] & B00001111) << 1;
                     break;
                 }
                 case 3:
                 {
-                    coldata =  (framebuffer[row][2] & B11110000) >> 4;
-                    coldata |= (framebuffer[row][3] & B00000001) << 6;
+                    coldata =  (framebuffer[row][2] & B11100000) >> 5;
+                    coldata |= (framebuffer[row][3] & B00000011) << 6;
                     break;
                 }
                 case 2:
@@ -205,7 +205,7 @@ void loop()
                 }
             }
             send_column_data(coldata);
-            delayMicroseconds(100);
+            delayMicroseconds(500);
         }
     }
 
