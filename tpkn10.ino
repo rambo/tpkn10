@@ -3,16 +3,16 @@
 /**
  * See the README for pins, this uses port magic for speed in the bit-banging parts
  */
-#define OE_DECODER_PORT PORTC
-#define OE_DECODER_DDR DDRC
-#define OE_DECODER_MASK B00000111
+#define OE_DECODER_PORT  PORTC
+#define OE_DECODER_DDR   DDRC
+#define OE_DECODER_MASK  B00000111
 #define OE_DECODER_SHIFT 0
-#define LATCH_PORT PORTC
-#define LATCH_DDR DDRC
-#define LATCH_MASK B00011000
-#define ROW_LATCH B00010000
-#define COLUMN_LATCH B00001000
-
+#define LATCH_PORT       PORTC
+#define LATCH_DDR        DDRC
+#define LATCH_MASK       B00111000
+#define ROW_LATCH        B00010000
+#define COLUMN_LATCH     B00001000
+#define BLANK_SCREEN     B00100000
 
 #define ROWS 7
 #define COLUMNS 40
@@ -33,7 +33,7 @@ void init_spi()
     //SPI.setClockDivider(SPI_CLOCK_DIV64); // 500kHz should still work with messy cables
 }
 
-void init_bitbang()
+void init_bitbang(void)
 {
     // Set the OE and latch pins as outputs
     OE_DECODER_DDR |= (0xff & OE_DECODER_MASK);
@@ -67,11 +67,24 @@ inline void send_column_data(uint8_t data)
     LATCH_PORT |= COLUMN_LATCH;
 }
 
+inline void blank_screen(void)
+{
+    // Drive low
+    LATCH_PORT &= (0xff ^ BLANK_SCREEN);
+}
+
+inline void enable_screen(void)
+{
+    // Drive low
+    LATCH_PORT |= BLANK_SCREEN;
+}
+
 void setup()
 {
     Serial.begin(115200);
     init_spi();
     init_bitbang();
+    enable_screen();
     
     // Testpattern
     for (uint8_t row=0; row < ROWS; row++)
@@ -149,12 +162,14 @@ void loop()
 {
 
     // Do something (but do not waste time)
-    // Refresh the framebuffer
+    // Refresh the framebuffer, TODO: move to interrupts
     for (uint8_t row=0; row < ROWS; row++)
     {
+        blank_screen();
         select_row(row);
         for (uint8_t coldrv=0; coldrv < (COLUMNS/COLS_PER_DRV); coldrv++)
         {
+            blank_screen();
             select_column_drv(coldrv);
             switch(coldrv)
             {
@@ -205,6 +220,7 @@ void loop()
                 }
             }
             send_column_data(coldata);
+            enable_screen();
             delayMicroseconds(200);
         }
     }
