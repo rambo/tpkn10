@@ -26,8 +26,10 @@ Framebuffer framebuffer_two;
 Framebuffer *active_framebuffer = &framebuffer_one;
 Framebuffer *write_framebuffer = &framebuffer_two;
 
-void blit(void)
+// Switches the active and write framebuffer pointers around
+inline void blit(void)
 {
+    cli();
     if (active_framebuffer == &framebuffer_one)
     {
         active_framebuffer = &framebuffer_two;
@@ -38,7 +40,21 @@ void blit(void)
         active_framebuffer = &framebuffer_one;
         write_framebuffer = &framebuffer_two;
     }
+    sei();
 }
+
+volatile boolean blit_on_blank_flag;
+
+void blit_on_blank(void)
+{
+    blit_on_blank_flag = true;
+    // Block untill ISR clears it
+    while (blit_on_blank_flag)
+    {
+        // NOP;
+    }
+}
+
 
 
 volatile boolean change_row = false;
@@ -178,6 +194,12 @@ ISR(TIMER2_COMPA_vect)
     // Handle row-change
     if (change_row)
     {
+        if (   current_row == -1
+            && blit_on_blank_flag )
+        {
+            blit();
+            blit_on_blank_flag = false;
+        }
         current_row++;        
         if (current_row >= ROWS)
         {
@@ -292,9 +314,9 @@ inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
 void loop()
 {
 
-    // Do something with the frambuffer (TODO: Double-buffer it)
+    // Do something with the write_framebuffer, assignment is; (*write_framebuffer)[row][col] = value then call blit_on_blank();
     delay(1000);
-    blit();
+    blit_on_blank();
 
 }
 
