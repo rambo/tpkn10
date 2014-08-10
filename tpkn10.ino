@@ -47,35 +47,11 @@ void init_bitbang(void)
     LATCH_PORT &= (0xff ^ LATCH_MASK);
 }
 
-/**
- * Handled via SPI interrupts now
-inline void select_row(uint8_t row)
-{
-    // Drive low
-    LATCH_PORT &= (0xff ^ ROW_LATCH);
-    SPI.transfer(1 << row);
-    // Drive high (to latch)
-    LATCH_PORT |= ROW_LATCH;
-}
- */
-
 inline void select_column_drv(uint8_t columndrv)
 {
     OE_DECODER_PORT &= (0xff ^ OE_DECODER_MASK);
     OE_DECODER_PORT |= (columndrv << OE_DECODER_SHIFT);
 }
-
-/**
- * Handled via SPI interrupts now
-inline void send_column_data(uint8_t data)
-{
-    // Drive low
-    LATCH_PORT &= (0xff ^ COLUMN_LATCH);
-    SPI.transfer(data);
-    // Drive high (to latch)
-    LATCH_PORT |= COLUMN_LATCH;
-}
- */
 
 inline void blank_screen(void)
 {
@@ -110,41 +86,21 @@ void setup()
                 framebuffer[row][i/8] ^= 1 << i % 8;
             }
         }
-        /*
-        // Invert the pattern
-        for (uint8_t col=0; 
-        col < (COLUMNS/8); col++)
-        {
-            framebuffer[row][col] ^= 0xff;
-        }
-        
-        */
-        /*
-        Famebuffer:
-        =====
-        10000 00100 00001 00000 01000 00010 00000 10000
-        01000 00010 00000 10000 00100 00001 00000 01000
-        00100 00001 00000 01000 00010 00000 10000 00100
-        00010 00000 10000 00100 00001 00000 01000 00010
-        00001 00000 01000 00010 00000 10000 00100 00001
-        00000 10000 00100 00001 00000 01000 00010 00000
-        00000 01000 00010 00000 10000 00100 00001 00000
-        =====
-        Booted
-        */
     }
-    
+    // To serialport, for debugging
     dump_framebuffer();
 
     // Get ready
     blank_screen();
+    // We must start with a row change
     change_row = true;
-
+    // Used for refreshing the screen
     initTimerCounter2();
 
     Serial.print(F("Booted"));
 }
 
+// To serialport, for debugging
 void dump_framebuffer()
 {
     Serial.println(F("Famebuffer:"));
@@ -171,9 +127,10 @@ void dump_framebuffer()
     Serial.println(F("====="));
 }
 
+// This determines the refesh frequency, we must keep each column driver on for some amount of time so the LEDs have time to turn on.
 void initTimerCounter2(void)
 {
-    // Setup for 0.01s delay
+    // Setup for 50uSec delay (or so)
     cli();
     TCCR2A = 0;                  //stop the timer
     TCNT2 = 0;                  //zero the timer
@@ -185,10 +142,10 @@ void initTimerCounter2(void)
     sei();
 }
 
-
+// This handles the refreshing
 ISR(TIMER2_COMPA_vect)
 {
-    PORTB |= _BV(2); // Turn pin 10 on
+    PORTB |= _BV(2); // Turn pin 10 on (for debugging)
     // Blank for redraw
     blank_screen();
     // Enable SPI interrupts
@@ -237,21 +194,23 @@ ISR(SPI_STC_vect)
 {
     // Disable the interrupt
     SPCR &= ~_BV(SPIE);
-    PORTB &= ~_BV(2); // Turn pin 10 off
+    PORTB &= ~_BV(2); // Turn pin 10 off  (for debugging)
     if (change_row)
     {
         // Drive high (to latch)
         LATCH_PORT |= ROW_LATCH;
         change_row = false;
-        // And call the timer
+        // And call the timer vector to handle the column.
         TIMER2_COMPA_vect();
         return;
     }
     // Drive high (to latch)
     LATCH_PORT |= COLUMN_LATCH;
+    // All data is sent, re-enable the screen.
     enable_screen();
 }
 
+// This convers the simple framebuffer we have to correct data format for the column drivers (which are funky)
 inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
 {
     uint8_t coldata;
