@@ -28,5 +28,7 @@ Has onboard 1A 5V switching reg, accpets 7-40V input (24V nominal)
 
 15 C for the 74138 (drives output-enables for the column drivers) -> A2
 
+16 E3 for the 74138 (used for global display blanking) -> A5
+
 These are not on the display-bus, the output-enables are, but we'll ignore those for now.
 
