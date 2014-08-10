@@ -3,6 +3,8 @@
 Remove the PLCC chip, solder wires to socket pins 13, 14, 15 & 16. Alternatively
 solder the corresponding wires directly to the legs of the 74HC138. If you're going to use the "display bus" connector to connect the other side of a display then you need to solder wires to the legs of the connector (or to the PLCC socket)
 
+**NOTE**: This library uses timers and direct register addressing, it will only work on ATMega328/ATMega1280/ATMega2560 based Arduinos (Duemilanove, Uno, Mega and Mega 2560/ADK, some Nanos & Minis) running on 16Mhz (timing will be off on other clock speeds but may be possible to adjust). Uses Timer2 so incompatible with any other library using it.
+
 ## Notes about the board itself
 
 44 pin PLCC socket, note the funky pin order (http://i207.photobucket.com/albums/bb73/ultimateroadwarrior/44pinplcc.jpg)
