@@ -183,8 +183,8 @@ void loop()
                 }
                 case 3:
                 {
-                    coldata =  (framebuffer[row][2] & B11100000) >> 5;
-                    coldata |= (framebuffer[row][3] & B00000011) << 6;
+                    coldata =  (framebuffer[row][2] & B11110000) >> 4;
+                    coldata |= (framebuffer[row][3] & B00000001) << 4;
                     break;
                 }
                 case 2:
@@ -195,7 +195,7 @@ void loop()
                 case 1:
                 {
                     coldata =  (framebuffer[row][3] & B11000000) >> 6;
-                    coldata |= (framebuffer[row][4] & B00000111);
+                    coldata |= (framebuffer[row][4] & B00000111) << 2;
                     break;
                 }
                 case 0:
