@@ -21,6 +21,13 @@
 // 7 rows by 40 leds
 uint8_t framebuffer[ROWS][COLUMNS/8];
 
+
+volatile boolean change_row = false;
+volatile int8_t current_row = -1;
+volatile int8_t current_column_drv = -1;
+const uint8_t coldrvs = (COLUMNS/COLS_PER_DRV);
+
+
 void init_spi()
 {
     // Init HW SPI    
@@ -40,6 +47,8 @@ void init_bitbang(void)
     LATCH_PORT &= (0xff ^ LATCH_MASK);
 }
 
+/**
+ * Handled via SPI interrupts now
 inline void select_row(uint8_t row)
 {
     // Drive low
@@ -48,6 +57,7 @@ inline void select_row(uint8_t row)
     // Drive high (to latch)
     LATCH_PORT |= ROW_LATCH;
 }
+ */
 
 inline void select_column_drv(uint8_t columndrv)
 {
@@ -55,6 +65,8 @@ inline void select_column_drv(uint8_t columndrv)
     OE_DECODER_PORT |= (columndrv << OE_DECODER_SHIFT);
 }
 
+/**
+ * Handled via SPI interrupts now
 inline void send_column_data(uint8_t data)
 {
     // Drive low
@@ -63,6 +75,7 @@ inline void send_column_data(uint8_t data)
     // Drive high (to latch)
     LATCH_PORT |= COLUMN_LATCH;
 }
+ */
 
 inline void blank_screen(void)
 {
@@ -79,6 +92,7 @@ inline void enable_screen(void)
 void setup()
 {
     Serial.begin(115200);
+    pinMode(10, OUTPUT); // aka PB2
     init_spi();
     init_bitbang();
     
@@ -124,11 +138,9 @@ void setup()
 
     // Get ready
     blank_screen();
-    select_row(0);
-    select_column_drv(0);
-    send_column_data(0x0);
+    change_row = true;
 
-    //initTimerCounter2();
+    initTimerCounter2();
 
     Serial.print(F("Booted"));
 }
@@ -165,7 +177,7 @@ void initTimerCounter2(void)
     cli();
     TCCR2A = 0;                  //stop the timer
     TCNT2 = 0;                  //zero the timer
-    OCR2A = 200;      //set the compare value (this is about 100uSec on 16MHz/8)
+    OCR2A = 100;      //set the compare value
     TIMSK2 = _BV(OCIE2A);         //interrupt on Compare Match A
     //start timer, ctc mode, prescaler clk/8
     TCCR2A = _BV(WGM01);
@@ -173,33 +185,71 @@ void initTimerCounter2(void)
     sei();
 }
 
-volatile uint8_t current_row;
-volatile uint8_t current_column_drv;
-const uint8_t coldrvs = (COLUMNS/COLS_PER_DRV);
 
 ISR(TIMER2_COMPA_vect)
 {
-    // Draw one segment
+    PORTB |= _BV(2); // Turn pin 10 on
+    TCNT2 = 0;                  //zero the timer
+    // Blank for redraw
     blank_screen();
-    select_column_drv(current_column_drv);
-    
+    // Enable SPI interrupts
+    SPCR |= _BV(SPIE);
 
-    // Scan columns
-    current_column_drv++;
-    if (current_column_drv >= coldrvs)
+
+    // Handle row-change
+    if (change_row)
     {
-        current_column_drv = 0;
-        current_row++;
-        // And rows
+        current_row++;        
         if (current_row >= ROWS)
         {
-            current_row = 0;
+            // This probably causes extra wait at end of rows
+            current_row = -1;
+            return;
         }
-        blank_screen();
-        select_row(current_row);
+        // Drive low to "chip-select"
+        LATCH_PORT &= (0xff ^ ROW_LATCH);
+        SPDR = 1 << current_row;
+        return;
     }
+
+    // Scan columns (0-7)
+    current_column_drv++;
+    if (current_column_drv > coldrvs)
+    {
+        current_column_drv = -1;
+        change_row = true;
+        // And recurse
+        TIMER2_COMPA_vect();
+        return;
+    }
+
+    select_column_drv(current_column_drv);
+    // Drive low ("chip-select")
+    LATCH_PORT &= (0xff ^ COLUMN_LATCH);
+
+    SPDR = get_column_drv_data(current_column_drv, current_row);
+
 }
 
+// Called when transfer is done
+ISR(SPI_STC_vect)
+{
+    // Disable the interrupt
+    SPCR &= ~_BV(SPIE);
+    PORTB &= ~_BV(2); // Turn pin 10 off
+    if (change_row)
+    {
+        // Drive high (to latch)
+        LATCH_PORT |= ROW_LATCH;
+        change_row = false;
+        // And call the timer
+        TIMER2_COMPA_vect();
+        return;
+    }
+    // Drive high (to latch)
+    LATCH_PORT |= COLUMN_LATCH;
+    enable_screen();
+}
 
 inline uint8_t get_column_drv_data(uint8_t coldrv, uint8_t row)
 {
@@ -264,7 +314,7 @@ void loop()
 {
 
     // Do something (but do not waste time)
-    // Refresh the framebuffer, TODO: move to interrupts
+    /* Refresh the framebuffer, MOVED to interrupts
     for (uint8_t row=0; row < ROWS; row++)
     {
         blank_screen();
@@ -278,6 +328,7 @@ void loop()
             delayMicroseconds(200);
         }
     }
+     */
 
 
      /* Testing 
