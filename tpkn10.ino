@@ -27,10 +27,10 @@ void init_spi()
     SPI.begin();
     SPI.setDataMode(SPI_MODE0);
     SPI.setBitOrder(MSBFIRST);
-    //SPI.setClockDivider(SPI_CLOCK_DIV2); 
+    SPI.setClockDivider(SPI_CLOCK_DIV2); 
     //SPI.setClockDivider(SPI_CLOCK_DIV16); // 1Mhz should still work with messy cables
     //SPI.setClockDivider(SPI_CLOCK_DIV32); // 500kHz should still work with messy cables
-    SPI.setClockDivider(SPI_CLOCK_DIV64); // 500kHz should still work with messy cables
+    //SPI.setClockDivider(SPI_CLOCK_DIV64); // 500kHz should still work with messy cables
 }
 
 void init_bitbang()
@@ -87,11 +87,15 @@ void setup()
                 framebuffer[row][i/8] ^= 1 << i % 8;
             }
         }
+        /*
         // Invert the pattern
-        for (uint8_t col=0; col < (COLUMNS/8); col++)
+        for (uint8_t col=0; 
+        col < (COLUMNS/8); col++)
         {
             framebuffer[row][col] ^= 0xff;
         }
+        
+        */
         /*
         Famebuffer:
         =====
@@ -145,7 +149,6 @@ void loop()
 {
 
     // Do something (but do not waste time)
-
     // Refresh the framebuffer
     for (uint8_t row=0; row < ROWS; row++)
     {
@@ -163,7 +166,7 @@ void loop()
                 case 6:
                 {
                     coldata =  (framebuffer[row][0] & B11100000) >> 5;
-                    coldata &= (framebuffer[row][1] & B00000011) << 3;
+                    coldata |= (framebuffer[row][1] & B00000011) << 3;
                     break;
                 }
                 case 5:
@@ -175,13 +178,13 @@ void loop()
                 case 4:
                 {
                     coldata =  (framebuffer[row][1] & B00000001);
-                    coldata &= (framebuffer[row][2] & B11110000) >> 3;
+                    coldata |= (framebuffer[row][2] & B11110000) >> 3;
                     break;
                 }
                 case 3:
                 {
                     coldata =  (framebuffer[row][2] & B11110000) >> 4;
-                    coldata &= (framebuffer[row][3] & B00000001) << 6;
+                    coldata |= (framebuffer[row][3] & B00000001) << 6;
                     break;
                 }
                 case 2:
@@ -192,7 +195,7 @@ void loop()
                 case 1:
                 {
                     coldata =  (framebuffer[row][3] & B11000000) >> 6;
-                    coldata &= (framebuffer[row][4] & B00000111);
+                    coldata |= (framebuffer[row][4] & B00000111);
                     break;
                 }
                 case 0:
@@ -202,11 +205,12 @@ void loop()
                 }
             }
             send_column_data(coldata);
+            delayMicroseconds(100);
         }
     }
 
 
-    /* Testing    
+     /* Testing 
     for (uint8_t cdrv=0; cdrv<8; cdrv++)
     {
         select_column_drv(cdrv);
@@ -224,7 +228,7 @@ void loop()
     */
 
 
-    /* Testing 2 
+    /* Testing 2
     for (uint8_t cdrv=0; cdrv<8; cdrv++)
     {
         select_column_drv(cdrv);
@@ -233,7 +237,7 @@ void loop()
             select_row(row);
             send_column_data(B00011111);
             // So eyes keep up
-            delay(25);
+            //delay(25);
         }
     }
     */
