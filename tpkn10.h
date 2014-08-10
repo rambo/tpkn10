@@ -186,7 +186,7 @@ void dump_framebuffer(Framebuffer *given_framebuffer)
 {
     Serial.println(F("Famebuffer:"));
     Serial.println(F("====="));
-    // Dump the framebuffer_one
+    // Dump the given framebuffer
     for (uint8_t row=0; row < ROWS; row++)
     {
         for (uint8_t col=0; col < COLUMNS/8; col++)
