@@ -10,6 +10,14 @@ void setup()
     Serial.begin(115200);
     Serial.println(F("Booting"));
     tpn10_begin();
+    
+    for (uint8_t i=0; i < 0xFF; i++)
+    {
+        Serial.print(F("sint("));
+        Serial.print(i, DEC);
+        Serial.print(F(")="));
+        Serial.println(sint(i), DEC);
+    }
 
     Serial.println(F("Booted"));
 }
@@ -69,7 +77,7 @@ void loop_effect()
     v = sint(time) * 1600;
     xstretch = sint(time/8) * 20 + 30;
     ystretch = sint((time+0x100)/4) * 20 + 30;
-    delay(10);
+    delay(100);
   }
 }
 

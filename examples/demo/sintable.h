@@ -3,6 +3,6 @@ const float sintable[0x100] PROGMEM = { 0.0, 0.024541228522912288, 0.04906767432
 
 inline float sint(uint16_t val) { 
   val = val & 0x1ff;    // 0..255    
-  return pgm_read_byte_near(sintable + val);
+  return pgm_read_float_near(sintable + val);
 }
 
